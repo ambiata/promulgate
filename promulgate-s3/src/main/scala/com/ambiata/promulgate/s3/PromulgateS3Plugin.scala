@@ -20,7 +20,6 @@ object PromulgateS3Plugin extends Plugin {
 
   def promulgateS3DistSettings: Seq[Sett] = s3Settings ++ Seq(
     S3DistKeys.path             :=   "",
-    credentials                 +=   Credentials(Path.userHome / ".s3credentials"),
     S3.progress in S3.upload    :=   false,
     S3.host in S3.upload        <<=  S3DistKeys.bucket.apply(bucket => s"${bucket}.s3.amazonaws.com"),
     mappings in S3.upload       <<=  (S3DistKeys.path, assembly, name, version).map((p, a, n, v) =>
