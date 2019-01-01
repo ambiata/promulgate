@@ -1,11 +1,16 @@
 package com.ambiata.promulgate.s3
 
-import sbt._, Keys._
-import sbtassembly.Plugin._, AssemblyKeys._
+import sbt._
+import Keys._
+import sbtassembly.Plugin._
+import AssemblyKeys._
 import com.typesafe.sbt.S3Plugin._
 import ohnosequences.sbt.SbtS3Resolver.autoImport._
 import com.amazonaws.services.s3.model.Region
-import com.amazonaws.auth._, profile._
+import com.amazonaws.auth._
+import com.typesafe.sbt.S3Keys
+import profile._
+import s3._
 
 object PromulgateS3Plugin extends Plugin {
   object S3DistKeys {
@@ -19,12 +24,11 @@ object PromulgateS3Plugin extends Plugin {
   }
 
   def promulgateS3DistSettings: Seq[Sett] = s3Settings ++ Seq(
-    S3DistKeys.path             :=   "",
-    credentials                 +=   Credentials(Path.userHome / ".s3credentials"),
-    S3.progress in S3.upload    :=   false,
-    S3.host in S3.upload        <<=  S3DistKeys.bucket.apply(bucket => s"${bucket}.s3.amazonaws.com"),
-    mappings in S3.upload       <<=  (S3DistKeys.path, assembly, name, version).map((p, a, n, v) =>
-      Seq((a, s"${p}${n}/${v}/${n}-${v}.jar")))
+    S3DistKeys.path := "",
+    credentials += Credentials(Path.userHome / ".s3credentials"),
+    S3Keys.s3Progress in S3Keys.s3Upload := false,
+    S3Keys.s3Host in S3Keys.s3Upload := s"${S3DistKeys.bucket.value}.s3.amazonaws.com",
+    mappings in S3Keys.s3Upload := Seq((assembly.value, s"${S3DistKeys.path.value}${name.value}/${version.value}/${name.value}-${version.value}.jar"))
   )
 
   def promulgateS3LibSettings: Seq[Sett] = Seq(
@@ -32,12 +36,16 @@ object PromulgateS3Plugin extends Plugin {
     publishMavenStyle           := false,
     publishArtifact in Test     := false,
     pomIncludeRepository        := { _ => false },
-    s3resolver                  <<= (S3LibKeys.region).apply(region => S3Resolver(
+    s3resolver := S3Resolver(
       new ProfileCredentialsProvider("default") |
-      new EnvironmentVariableCredentialsProvider() |
-      new InstanceProfileCredentialsProvider()
-    , false, region, com.amazonaws.services.s3.model.CannedAccessControlList.BucketOwnerFullControl)),
-    publishTo                   <<= (s3resolver, S3LibKeys.bucket).apply((resolver, bucket) => Some(resolver("promulgate-s3-publish", s3(bucket)).withIvyPatterns))
+        new EnvironmentVariableCredentialsProvider() |
+        InstanceProfileCredentialsProvider.getInstance(),
+      false,
+      S3LibKeys.region.value,
+      com.amazonaws.services.s3.model.CannedAccessControlList.BucketOwnerFullControl,
+      s3sse.value
+    ),
+    publishTo                   := Some(s3resolver.value("promulgate-s3-publish", s3(S3LibKeys.bucket.value)).withIvyPatterns)
   )
 
 }

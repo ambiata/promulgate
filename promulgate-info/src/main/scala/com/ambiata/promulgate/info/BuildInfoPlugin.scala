@@ -3,6 +3,7 @@ package com.ambiata.promulgate.info
 import com.ambiata.promulgate.version.VersionPlugin._
 import java.util.Date
 import sbt._, Keys._
+import com.ambiata.promulgate.version._
 
 object BuildInfoPlugin extends Plugin {
   object BuildInfoKeys {
@@ -12,14 +13,11 @@ object BuildInfoPlugin extends Plugin {
   import BuildInfoKeys._
 
   def promulgateBuildInfoSettings = Seq[Sett](
-    sourceGenerators in Compile <+=
-      (sourceManaged in Compile, name, BuildInfoKeys.pkg, version in ThisBuild, VersionKeys.date in ThisBuild, VersionKeys.user in ThisBuild, VersionKeys.machine in ThisBuild, VersionKeys.commit in ThisBuild).map(
-        (target, name, pkg, version, instant, user, machine, commit) => {
-          val file = target / "BuildInfo.scala"
-          IO.write(file, BuildInfoPlugin.scala(pkg, user, machine, instant, name, version, commit))
+    sourceGenerators in Compile += Def.task {
+          val file = (sourceManaged in Compile).value / "BuildInfo.scala"
+          IO.write(file, BuildInfoPlugin.scala(BuildInfoKeys.pkg.value, (VersionKeys.user in ThisBuild).value, (VersionKeys.machine in ThisBuild).value, (VersionKeys.date in ThisBuild).value, name.value, (version in ThisBuild).value, (VersionKeys.commit in ThisBuild).value))
           Seq(file)
         }
-      )
   )
 
   def scala(pkg: String, user: String, machine: String, instant: Date, name: String, version: String, commit: String) = {

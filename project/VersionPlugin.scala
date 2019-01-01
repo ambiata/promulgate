@@ -21,10 +21,10 @@ object VersionPlugin extends Plugin {
     VersionKeys.date in ThisBuild           :=   VersionPlugin.now,
     VersionKeys.user in ThisBuild           :=   VersionPlugin.user,
     VersionKeys.machine in ThisBuild        :=   VersionPlugin.machine,
-    VersionKeys.commish in ThisBuild        <<=  baseDirectory.apply(VersionPlugin.commish),
-    VersionKeys.commit in ThisBuild         <<=  baseDirectory.apply(VersionPlugin.commit),
-    version in ThisBuild                      <<=  (version in ThisBuild, VersionKeys.date, VersionKeys.commish).apply((v, d, c) =>
-      s"${v}-${VersionPlugin.timestamp(d)}-${c}")
+    VersionKeys.commish in ThisBuild        :=   VersionPlugin.commish(baseDirectory.value),
+    VersionKeys.commit in ThisBuild         :=   VersionPlugin.commit(baseDirectory.value),
+    version in ThisBuild                    := 
+      s"${(version in ThisBuild).value}-${VersionPlugin.timestamp(VersionKeys.date.value)}-${VersionKeys.commish.value}"
   )
 
   def user =

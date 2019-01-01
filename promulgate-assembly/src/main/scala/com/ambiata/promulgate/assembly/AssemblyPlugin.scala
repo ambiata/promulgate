@@ -6,7 +6,7 @@ import sbtassembly.Plugin._, AssemblyKeys._
 object AssemblyPlugin extends Plugin {
   def promulgateAssemblySettings = (assemblySettings: Seq[Sett]) ++ Seq(
     test          in assembly   :=   {},
-    mergeStrategy in assembly   <<=  (mergeStrategy in assembly).apply(merge)
+    mergeStrategy in assembly   :=  merge((mergeStrategy in assembly).value)
   )
 
   def merge(old: String => MergeStrategy): String => MergeStrategy = x => {
